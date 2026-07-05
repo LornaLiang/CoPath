@@ -1,0 +1,55 @@
+import logging
+
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from starlette.exceptions import HTTPException
+
+from backend.utils.errors import AppError
+
+
+logger = logging.getLogger(__name__)
+
+
+def error_response(status_code: int, message: str) -> JSONResponse:
+    return JSONResponse(
+        status_code=status_code,
+        content={
+            "success": False,
+            "data": None,
+            "message": message,
+        },
+    )
+
+
+async def handle_app_error(_request: Request, exc: AppError) -> JSONResponse:
+    return error_response(exc.status_code, exc.message)
+
+
+async def handle_validation_error(
+    _request: Request,
+    exc: RequestValidationError,
+) -> JSONResponse:
+    first_error = exc.errors()[0] if exc.errors() else None
+    if first_error:
+        location = ".".join(str(item) for item in first_error["loc"])
+        message = f"Invalid request parameter {location}: {first_error['msg']}"
+    else:
+        message = "Invalid request parameters"
+    return error_response(422, message)
+
+
+async def handle_http_error(_request: Request, exc: HTTPException) -> JSONResponse:
+    return error_response(exc.status_code, str(exc.detail))
+
+
+async def handle_unexpected_error(_request: Request, exc: Exception) -> JSONResponse:
+    logger.exception("Unhandled API error", exc_info=exc)
+    return error_response(500, "Internal server error")
+
+
+def register_exception_handlers(app: FastAPI) -> None:
+    app.add_exception_handler(AppError, handle_app_error)
+    app.add_exception_handler(RequestValidationError, handle_validation_error)
+    app.add_exception_handler(HTTPException, handle_http_error)
+    app.add_exception_handler(Exception, handle_unexpected_error)

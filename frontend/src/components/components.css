@@ -1,0 +1,126 @@
+.page-heading {
+  margin-bottom: 18px;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.page-heading .ant-typography {
+  margin: 0 !important;
+}
+
+.page-heading h2.ant-typography {
+  color: var(--ink);
+  font-size: 23px;
+  letter-spacing: -0.03em;
+}
+
+.page-heading .ant-typography-paragraph {
+  margin-top: 5px !important;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.page-heading__extra {
+  flex: none;
+}
+
+.metric-card {
+  min-height: 92px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--surface);
+  box-shadow: var(--shadow);
+}
+
+.metric-card__icon {
+  width: 42px;
+  height: 42px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border-radius: 12px;
+  font-size: 19px;
+}
+
+.metric-card__icon--blue { color: #2563eb; background: #eaf2ff; }
+.metric-card__icon--green { color: #10a96b; background: #e8f9f1; }
+.metric-card__icon--purple { color: #8b5cf6; background: #f3edff; }
+.metric-card__icon--orange { color: #e58b00; background: #fff5df; }
+
+.metric-card__label,
+.metric-card__hint {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.metric-card__value {
+  margin: 2px 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 750;
+}
+
+.metric-card__hint {
+  font-size: 10px;
+}
+
+.soft-card.ant-card {
+  border-color: var(--line);
+  border-radius: 13px;
+  box-shadow: var(--shadow);
+}
+
+.soft-card .ant-card-head {
+  min-height: 50px;
+  padding-inline: 18px;
+  border-bottom-color: #edf1f6;
+}
+
+.soft-card .ant-card-head-title {
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.soft-card .ant-card-body {
+  padding: 18px;
+}
+
+.section-label {
+  margin-bottom: 10px;
+  color: #34415a;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.status-dot {
+  width: 7px;
+  height: 7px;
+  display: inline-block;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 0 4px rgb(25 185 121 / 12%);
+}
+
+.insight-box {
+  padding: 14px 16px;
+  display: flex;
+  align-items: flex-start;
+  gap: 11px;
+  color: #40506a;
+  font-size: 12px;
+  line-height: 1.7;
+  border: 1px solid #d8e6ff;
+  border-radius: 11px;
+  background: linear-gradient(135deg, #f1f6ff, #f8fbff);
+}
+
+.insight-box > span:first-child {
+  color: var(--primary);
+  font-size: 17px;
+}

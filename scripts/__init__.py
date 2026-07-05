@@ -1,0 +1,1 @@
+"""CoPath project scripts."""
