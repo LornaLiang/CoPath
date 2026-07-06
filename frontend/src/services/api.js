@@ -8,4 +8,18 @@ const api = axios.create({
   },
 })
 
+api.interceptors.response.use(
+  (response) => {
+    const payload = response.data
+    if (payload?.code === 200) {
+      return payload.data
+    }
+    return Promise.reject(new Error(payload?.message || '请求失败'))
+  },
+  (error) => {
+    const message = error.response?.data?.message || error.message || '网络请求失败'
+    return Promise.reject(new Error(message))
+  },
+)
+
 export default api

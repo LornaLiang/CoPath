@@ -1,4 +1,5 @@
 import json
+import logging
 
 from sqlalchemy import select
 from sqlalchemy.exc import IntegrityError
@@ -13,6 +14,9 @@ from backend.models import (
 from backend.services.common import require_student
 from backend.utils.errors import ConflictError, NotFoundError
 from backend.utils.json import parse_json
+
+
+logger = logging.getLogger(__name__)
 
 
 class PathService:
@@ -196,6 +200,15 @@ class PathService:
         except IntegrityError as exc:
             session.rollback()
             raise ConflictError("Unable to switch the current learning path") from exc
+
+        logger.info(
+            "Path switched manually student_id=%s old_path_id=%s new_path_id=%s "
+            "reason=%s",
+            student_id,
+            current_path.path_id,
+            new_path.path_id,
+            reason,
+        )
 
         return {
             "old_path_id": current_path.path_id,

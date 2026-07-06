@@ -12,8 +12,11 @@ import {
   SettingOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import { Avatar, Layout, Menu, Progress, Space, Tag, Typography } from 'antd'
+import { Avatar, Layout, Menu, Progress, Segmented, Space, Tag, Typography, message } from 'antd'
+import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
+
+import { useAppData } from '../hooks/useAppData'
 
 const { Header, Content, Sider } = Layout
 
@@ -28,11 +31,33 @@ const navigationItems = [
 ]
 
 const pageTitles = Object.fromEntries(navigationItems.map((item) => [item.key, item.label]))
+const demoModeEnabled = import.meta.env.VITE_DEMO_MODE !== 'false'
 
 function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
+  const { currentStudent, currentPath, goals, health, error, students, switchStudent } = useAppData()
+  const [switchingStudent, setSwitchingStudent] = useState(false)
   const pageTitle = pageTitles[location.pathname] || 'CoPath'
+  const currentGoal = goals.find((goal) => goal.goal_id === currentStudent?.current_goal_id)
+  const completedNodes = currentPath?.nodes.filter((node) => node.status === 'completed').length || 0
+  const totalNodes = currentPath?.nodes.length || 0
+  const progress = totalNodes ? Math.round((completedNodes / totalNodes) * 100) : 0
+  const currentNode = currentPath?.nodes.find((node) => node.status === 'learning')
+
+  const switchDemoStudent = async (studentId) => {
+    if (studentId === currentStudent?.student_id) return
+    setSwitchingStudent(true)
+    try {
+      const student = students.find((item) => item.student_id === studentId)
+      await switchStudent(studentId)
+      message.success(`Demo 已切换至 ${student?.name || studentId}`)
+    } catch (requestError) {
+      message.error(requestError.message)
+    } finally {
+      setSwitchingStudent(false)
+    }
+  }
 
   return (
     <Layout className="app-shell">
@@ -53,13 +78,13 @@ function AppLayout() {
         />
         <div className="sider-goal-card">
           <div className="sider-goal-card__label"><BulbOutlined /> 当前目标</div>
-          <strong>掌握递归</strong>
+          <strong>{currentGoal?.title || '等待数据库'}</strong>
           <span>Python 基础课程</span>
           <div className="sider-goal-card__progress">
-            <span>学习进度</span><b>60%</b>
+            <span>学习进度</span><b>{progress}%</b>
           </div>
-          <Progress percent={60} showInfo={false} size="small" strokeColor="#2563eb" />
-          <div className="sider-goal-card__meta"><ClockCircleOutlined /> 预计还需 3 小时</div>
+          <Progress percent={progress} showInfo={false} size="small" strokeColor="#2563eb" />
+          <div className="sider-goal-card__meta"><ClockCircleOutlined /> 当前节点 · {currentNode?.name || '待加载'}</div>
         </div>
       </Sider>
 
@@ -70,11 +95,23 @@ function AppLayout() {
             <Typography.Text>{pageTitle}</Typography.Text>
           </div>
           <Space size={10} className="app-header__status">
-            <Tag icon={<CheckCircleFilled />} color="success">路径进行中</Tag>
-            <Tag color="blue">AI 助手 · Mock</Tag>
+            {demoModeEnabled && students.length ? (
+              <div className="demo-switcher">
+                <Tag color="blue">Demo Mode</Tag>
+                <Segmented
+                  size="small"
+                  disabled={switchingStudent}
+                  value={currentStudent?.student_id}
+                  options={students.map((student) => ({ label: student.name, value: student.student_id }))}
+                  onChange={switchDemoStudent}
+                />
+              </div>
+            ) : null}
+            <Tag icon={<CheckCircleFilled />} color={error ? 'error' : 'success'}>{error ? 'API 连接异常' : currentPath?.status === 'active' ? '路径进行中' : '路径待开始'}</Tag>
+            <Tag color={health?.ai === 'available' ? 'blue' : 'default'}>AI · {health?.ai || '检测中'}</Tag>
             <div className="header-user">
               <Avatar size={32} icon={<UserOutlined />} />
-              <span><strong>Tom</strong><small>当前学生</small></span>
+              <span><strong>{currentStudent?.name || '加载中'}</strong><small>当前学生</small></span>
             </div>
           </Space>
         </Header>

@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session, sessionmaker
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATABASE_PATH = PROJECT_ROOT / "database" / "copath.db"
+DATABASE_PATH = PROJECT_ROOT / "database" / "demo.db"
 DATABASE_URL = f"sqlite:///{DATABASE_PATH.as_posix()}"
 
 engine = create_engine(

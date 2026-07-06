@@ -1,7 +1,7 @@
 from fastapi import APIRouter, status
 from fastapi.responses import JSONResponse
 
-from backend.schemas.common import ApiResponse
+from backend.schemas.common import ApiResponse, success_response
 from backend.services.health_service import HealthService
 
 
@@ -16,14 +16,10 @@ async def health_check():
         return JSONResponse(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             content={
-                "success": False,
+                "code": status.HTTP_503_SERVICE_UNAVAILABLE,
                 "data": health,
                 "message": "database unavailable",
             },
         )
 
-    return {
-        "success": True,
-        "data": health,
-        "message": "ok",
-    }
+    return success_response(health)

@@ -7,14 +7,22 @@ DataT = TypeVar("DataT")
 
 
 class ApiResponse(BaseModel, Generic[DataT]):
-    success: bool
+    code: int
     data: DataT | None
     message: str
 
 
-def success_response(data: DataT, message: str = "ok") -> dict:
+class CodeApiResponse(ApiResponse[DataT], Generic[DataT]):
+    """Backward-compatible schema name for Milestone 8/9 routes."""
+
+
+def success_response(data: DataT, message: str = "success") -> dict:
     return {
-        "success": True,
+        "code": 200,
         "data": data,
         "message": message,
     }
+
+
+def code_response(data: DataT, message: str = "success") -> dict:
+    return success_response(data, message)

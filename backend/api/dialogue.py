@@ -20,7 +20,7 @@ def list_dialogues(student_id: StudentId, session: DatabaseSession) -> dict:
 @router.post("/chat", response_model=ApiResponse[dict[str, Any]])
 def chat(payload: ChatRequest, session: DatabaseSession) -> dict:
     return success_response(
-        DialogueService.create_chat_placeholder(
+        DialogueService.create_chat(
             session,
             payload.student_id,
             payload.node_id,

@@ -6,6 +6,7 @@ from backend.api import (
     graph,
     health,
     learning,
+    path_planning,
     paths,
     profile,
     resources,
@@ -19,6 +20,7 @@ api_router.include_router(health.router)
 api_router.include_router(students.router)
 api_router.include_router(goals.router)
 api_router.include_router(paths.router)
+api_router.include_router(path_planning.router)
 api_router.include_router(learning.router)
 api_router.include_router(dialogue.router)
 api_router.include_router(graph.router)

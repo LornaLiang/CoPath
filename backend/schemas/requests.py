@@ -47,3 +47,26 @@ class ChatRequest(RequestModel):
     student_id: str = Field(min_length=1, max_length=64)
     node_id: str = Field(min_length=1, max_length=64)
     message: str = Field(min_length=1, max_length=4000)
+
+
+class ProfileAISignal(RequestModel):
+    knowledge_gap: str | None = Field(default=None, max_length=64)
+    confusion_level: float = Field(ge=0, le=1)
+    learning_preference: Literal["basic", "example", "fast"] | None = None
+    suggested_action: str | None = Field(default=None, max_length=64)
+
+
+class ProfileUpdateRequest(RequestModel):
+    student_id: str = Field(min_length=1, max_length=64)
+    ai_signal: ProfileAISignal
+
+
+class ProfileEventRequest(RequestModel):
+    student_id: str = Field(min_length=1, max_length=64)
+    node_id: str = Field(min_length=1, max_length=64)
+    result: Literal["correct", "wrong"]
+
+
+class PathPlanRequest(RequestModel):
+    student_id: str = Field(min_length=1, max_length=64)
+    goal_id: str = Field(min_length=1, max_length=64)

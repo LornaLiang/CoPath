@@ -61,6 +61,11 @@ class StudentProfile(Base):
     learning_speed: Mapped[str] = mapped_column(Text, nullable=False)
     learning_preference: Mapped[str] = mapped_column(Text, nullable=False)
     confidence: Mapped[float] = mapped_column(REAL, nullable=False)
+    mastery_json: Mapped[str] = mapped_column(
+        Text,
+        nullable=False,
+        server_default=text("'{}'"),
+    )
     profile_json: Mapped[str] = mapped_column(Text, nullable=False)
     updated_at: Mapped[str] = mapped_column(
         Text,

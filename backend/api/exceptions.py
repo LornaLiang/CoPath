@@ -15,19 +15,26 @@ def error_response(status_code: int, message: str) -> JSONResponse:
     return JSONResponse(
         status_code=status_code,
         content={
-            "success": False,
+            "code": status_code,
             "data": None,
             "message": message,
         },
     )
 
 
-async def handle_app_error(_request: Request, exc: AppError) -> JSONResponse:
+async def handle_app_error(request: Request, exc: AppError) -> JSONResponse:
+    logger.warning(
+        "API request rejected method=%s path=%s status=%s message=%s",
+        request.method,
+        request.url.path,
+        exc.status_code,
+        exc.message,
+    )
     return error_response(exc.status_code, exc.message)
 
 
 async def handle_validation_error(
-    _request: Request,
+    request: Request,
     exc: RequestValidationError,
 ) -> JSONResponse:
     first_error = exc.errors()[0] if exc.errors() else None
@@ -36,15 +43,33 @@ async def handle_validation_error(
         message = f"Invalid request parameter {location}: {first_error['msg']}"
     else:
         message = "Invalid request parameters"
+    logger.warning(
+        "API validation failed method=%s path=%s message=%s",
+        request.method,
+        request.url.path,
+        message,
+    )
     return error_response(422, message)
 
 
-async def handle_http_error(_request: Request, exc: HTTPException) -> JSONResponse:
+async def handle_http_error(request: Request, exc: HTTPException) -> JSONResponse:
+    logger.warning(
+        "HTTP request failed method=%s path=%s status=%s message=%s",
+        request.method,
+        request.url.path,
+        exc.status_code,
+        exc.detail,
+    )
     return error_response(exc.status_code, str(exc.detail))
 
 
-async def handle_unexpected_error(_request: Request, exc: Exception) -> JSONResponse:
-    logger.exception("Unhandled API error", exc_info=exc)
+async def handle_unexpected_error(request: Request, exc: Exception) -> JSONResponse:
+    logger.exception(
+        "Unhandled API error method=%s path=%s",
+        request.method,
+        request.url.path,
+        exc_info=exc,
+    )
     return error_response(500, "Internal server error")
 
 

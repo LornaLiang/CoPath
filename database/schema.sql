@@ -36,6 +36,7 @@ CREATE TABLE IF NOT EXISTS student_profiles (
     learning_preference TEXT NOT NULL
         CHECK (learning_preference IN ('basic', 'example', 'fast')),
     confidence REAL NOT NULL CHECK (confidence >= 0 AND confidence <= 1),
+    mastery_json TEXT NOT NULL DEFAULT '{}',
     profile_json TEXT NOT NULL,
     updated_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (student_id) REFERENCES students (student_id)

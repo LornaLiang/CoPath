@@ -1,9 +1,14 @@
 import { RouterProvider } from 'react-router-dom'
 
+import { AppDataProvider } from './hooks/useAppData'
 import router from './router'
 
 function App() {
-  return <RouterProvider router={router} />
+  return (
+    <AppDataProvider>
+      <RouterProvider router={router} />
+    </AppDataProvider>
+  )
 }
 
 export default App

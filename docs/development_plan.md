@@ -326,41 +326,44 @@ feat: connect frontend and backend
 
 ---
 
-# Milestone 6：知识图谱
+# Milestone 6：引入 Neo4j 知识图谱
 
 ## 目标
 
-实现知识图谱。
+在保留 SQLite 业务数据库的基础上，引入 Neo4j 作为知识图谱数据库，实现课程知识点、知识依赖关系和路径查询的图数据库管理。
 
 ## 内容
 
-NetworkX
-
-GraphService
-
-Graph API
-
-Graph 页面
-
-路径高亮
-
-知识点详情
+1. 安装并配置 Neo4j。
+2. 在后端新增 Neo4j 连接配置。
+3. 新增 GraphRepository / GraphService。
+4. 将 Demo 知识点和知识依赖从 SQLite 或 seed 数据同步到 Neo4j。
+5. 使用 Cypher 查询：
+   - 全部知识点
+   - 前置知识
+   - 后继知识
+   - 当前学习路径
+   - 可达路径
+   - 补救节点
+6. 修改知识图谱相关 API，使其优先从 Neo4j 查询。
+7. 保留 SQLite 中的 knowledge_nodes 和 knowledge_edges 作为初始化来源或备份。
+8. 知识图谱页面继续通过现有 API 展示，不直接访问 Neo4j。
 
 ## 验收标准
 
-知识图谱正常显示。
-
-路径正确高亮。
-
-点击节点显示详情。
+- Neo4j 能成功启动。
+- 后端能连接 Neo4j。
+- Demo 知识图谱能导入 Neo4j。
+- `/api/graph` 能返回 Neo4j 中的节点和边。
+- 知识图谱页面能正常显示。
+- SQLite 中原有学生、画像、学习记录、对话等数据不受影响。
 
 ## Git Commit
 
-```
-feat: implement knowledge graph
-```
-
+```text
+feat: integrate neo4j knowledge graph
 ---
+
 
 # Milestone 7：AI 学习助手
 

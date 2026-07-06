@@ -188,6 +188,23 @@ body {
   border-radius: 999px;
 }
 
+.demo-switcher {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.demo-switcher .ant-tag {
+  padding-inline: 7px;
+  font-size: 9px;
+}
+
+.demo-switcher .ant-segmented-item-label {
+  min-width: 40px;
+  padding-inline: 7px;
+  font-size: 10px;
+}
+
 .header-user {
   margin-left: 5px;
   padding-left: 14px;

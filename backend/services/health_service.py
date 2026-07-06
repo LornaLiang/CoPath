@@ -1,3 +1,4 @@
+from backend.ai.config import AISettings
 from backend.database.connection import check_database_connection
 
 
@@ -11,6 +12,5 @@ class HealthService:
             "database": (
                 "connected" if check_database_connection() else "disconnected"
             ),
-            # TODO(Milestone 7): report the configured AI provider's real status.
-            "ai": "not_configured",
+            "ai": "available" if AISettings.is_configured() else "not_configured",
         }

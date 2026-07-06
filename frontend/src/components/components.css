@@ -124,3 +124,13 @@
   color: var(--primary);
   font-size: 17px;
 }
+
+.page-state {
+  min-height: 260px;
+  display: grid;
+  place-items: center;
+}
+
+.page-state .ant-skeleton {
+  width: min(720px, 100%);
+}

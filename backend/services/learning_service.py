@@ -1,4 +1,7 @@
+import logging
+
 from sqlalchemy import select
+from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
 from backend.models import (
@@ -9,8 +12,13 @@ from backend.models import (
 )
 from backend.services.common import require_node, require_student, serialize_resource
 from backend.services.path_service import PathService
-from backend.utils.errors import NotFoundError
+from backend.services.path_planner import PathPlanner
+from backend.services.profile_service import LearningProfileService
+from backend.utils.errors import AppError, NotFoundError
 from backend.utils.json import parse_json
+
+
+logger = logging.getLogger(__name__)
 
 
 class LearningService:
@@ -52,27 +60,70 @@ class LearningService:
         score: float | None,
         time_spent: int | None,
     ) -> dict:
-        require_student(session, student_id)
+        student = require_student(session, student_id)
         require_node(session, node_id)
-        session.add(
-            LearningEvent(
-                student_id=student_id,
-                node_id=node_id,
-                event_type=event_type,
-                result=result,
-                score=score,
-                time_spent=time_spent,
-            )
+        event = LearningEvent(
+            student_id=student_id,
+            node_id=node_id,
+            event_type=event_type,
+            result=result,
+            score=score,
+            time_spent=time_spent,
         )
-        session.commit()
+        profile = None
+        path_plan = None
+        try:
+            session.add(event)
+            session.flush()
+            profile = LearningProfileService.apply_learning_event(
+                session,
+                student_id,
+                node_id,
+                result,
+                commit=False,
+            )
+            if student.current_goal_id:
+                path_plan = PathPlanner.update_path(
+                    session,
+                    student_id,
+                    student.current_goal_id,
+                    trigger_type="quiz",
+                    commit=False,
+                )
+            session.commit()
+        except SQLAlchemyError as exc:
+            session.rollback()
+            raise AppError("Unable to save learning event", status_code=500) from exc
 
-        # TODO(Milestone 8): update the learning profile from this event.
-        # TODO(Milestone 9): evaluate whether the path should be adjusted.
+        logger.info(
+            "Learning event persisted student_id=%s node_id=%s event_type=%s "
+            "result=%s profile_updated=%s path_adjusted=%s",
+            student_id,
+            node_id,
+            event_type,
+            result,
+            profile is not None,
+            bool(path_plan and path_plan["changed"]),
+        )
+        if path_plan and path_plan["changed"]:
+            logger.info(
+                "Path changed from learning event student_id=%s selected_path=%s "
+                "adjustments=%s reason=%s",
+                student_id,
+                path_plan["selected_path"],
+                len(path_plan["adjustments"]),
+                path_plan["reason"],
+            )
         return {
             "event_saved": True,
-            "profile_updated": False,
-            "path_adjusted": False,
-            "new_path": None,
+            "profile_updated": profile is not None,
+            "profile": profile,
+            "path_adjusted": bool(path_plan and path_plan["changed"]),
+            "new_path": (
+                path_plan["current_path"]
+                if path_plan and path_plan["changed"]
+                else None
+            ),
         }
 
     @staticmethod
@@ -100,7 +151,7 @@ class LearningService:
         }
         suggested_action, message = suggestions[feedback_type]
 
-        # TODO(Milestone 8/9): consume feedback in profile and adaptation services.
+        # TODO(Milestone 9): consume feedback in the adaptation service.
         return {
             "feedback_saved": True,
             "suggested_action": suggested_action,
@@ -155,7 +206,7 @@ class LearningService:
             if weak_points
             else "建议继续当前学习路径。"
         )
-        # TODO(Milestone 7): replace this deterministic summary with an AI summary.
+        # TODO(future): optionally generate a richer end-of-learning summary with AI.
         return {
             "summary": f"当前薄弱点为{weak_text}，正在采用{path.path_name}。",
             "weak_points": weak_points,

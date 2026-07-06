@@ -18,5 +18,5 @@ def get_graph(student_id: StudentId, session: DatabaseSession) -> dict:
 
 
 @router.get("/node/{node_id}", response_model=ApiResponse[dict[str, Any]])
-def get_node_detail(node_id: NodeId, session: DatabaseSession) -> dict:
-    return success_response(GraphService.get_node_detail(session, node_id))
+def get_node_detail(node_id: NodeId) -> dict:
+    return success_response(GraphService.get_node_detail(node_id))

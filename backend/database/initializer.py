@@ -1,3 +1,4 @@
+import json
 import sqlite3
 from pathlib import Path
 
@@ -72,6 +73,45 @@ def initialize_database(database_path: Path = DATABASE_PATH) -> dict[str, int]:
         _validate_demo_data(table_counts)
 
     return table_counts
+
+
+def ensure_profile_schema(database_path: Path = DATABASE_PATH) -> bool:
+    """Add mastery_json to pre-Milestone-8 databases without dropping data."""
+    if not database_path.exists():
+        return False
+
+    if database_path == DATABASE_PATH:
+        engine.dispose()
+    changed = False
+    with sqlite3.connect(database_path) as connection:
+        columns = {
+            row[1]
+            for row in connection.execute("PRAGMA table_info(student_profiles)")
+        }
+        if not columns:
+            return False
+        if "mastery_json" not in columns:
+            connection.execute(
+                "ALTER TABLE student_profiles "
+                "ADD COLUMN mastery_json TEXT NOT NULL DEFAULT '{}'"
+            )
+            changed = True
+
+        rows = connection.execute(
+            "SELECT profile_id, profile_json, mastery_json FROM student_profiles"
+        ).fetchall()
+        for profile_id, profile_json, mastery_json in rows:
+            if mastery_json and mastery_json != "{}":
+                continue
+            profile_data = json.loads(profile_json)
+            mastery = profile_data.get("mastery", {})
+            connection.execute(
+                "UPDATE student_profiles SET mastery_json = ? WHERE profile_id = ?",
+                (json.dumps(mastery, ensure_ascii=False), profile_id),
+            )
+            changed = True
+        connection.commit()
+    return changed
 
 
 def reset_database(database_path: Path = DATABASE_PATH) -> dict[str, int]:
