@@ -15,7 +15,8 @@ class AIConfigurationError(AppError):
 
 @dataclass(frozen=True)
 class AISettings:
-    api_key: str = field(repr=False)
+    mode: str = "openai"
+    api_key: str = field(default="", repr=False)
     base_url: str = "https://api.openai.com/v1"
     response_format: str = "json_schema"
     timeout_seconds: float = 30.0
@@ -24,6 +25,12 @@ class AISettings:
     @classmethod
     def from_env(cls) -> "AISettings":
         load_dotenv(PROJECT_ROOT / ".env", override=False)
+        mode = os.getenv("AI_MODE", "openai").strip().lower()
+        if mode not in {"mock", "openai"}:
+            raise AIConfigurationError("AI_MODE must be mock or openai")
+        if mode == "mock":
+            return cls(mode=mode)
+
         api_key = os.getenv("OPENAI_API_KEY", "").strip()
         if not api_key:
             raise AIConfigurationError(
@@ -63,6 +70,7 @@ class AISettings:
             raise AIConfigurationError("OPENAI_BASE_URL must be a valid HTTP(S) URL")
 
         return cls(
+            mode=mode,
             api_key=api_key,
             base_url=base_url.rstrip("/"),
             response_format=response_format,

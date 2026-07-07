@@ -163,6 +163,8 @@ class PathService:
         student_id: str,
         new_path_id: str,
         reason: str,
+        *,
+        commit: bool = True,
     ) -> dict:
         current_path = PathService.get_current_model(session, student_id)
         new_path = session.get(LearningPath, new_path_id)
@@ -196,7 +198,10 @@ class PathService:
                     reason=reason,
                 )
             )
-            session.commit()
+            if commit:
+                session.commit()
+            else:
+                session.flush()
         except IntegrityError as exc:
             session.rollback()
             raise ConflictError("Unable to switch the current learning path") from exc

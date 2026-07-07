@@ -9,23 +9,26 @@ import {
   SendOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons'
-import { Avatar, Button, Card, Collapse, Empty, Input, Progress, Radio, Space, Tabs, Tag, message } from 'antd'
+import { Avatar, Button, Card, Empty, Input, Progress, Radio, Space, Tabs, Tag, message } from 'antd'
 import { useMemo, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import PageHeader from '../components/PageHeader'
 import PageState from '../components/PageState'
 import useAsyncData from '../hooks/useAsyncData'
 import { useAppData } from '../hooks/useAppData'
-import { dialogueApi, learningApi, resourceApi } from '../services/copathApi'
+import { dialogueApi, learningApi, pathApi, resourceApi } from '../services/copathApi'
 
 const { TextArea } = Input
 
 function LearningPage() {
+  const navigate = useNavigate()
   const { currentStudent, currentPath, health, loading: appLoading, error: appError, refresh } = useAppData()
   const studentId = currentStudent?.student_id
   const [quizAnswer, setQuizAnswer] = useState()
   const [chatInput, setChatInput] = useState('')
   const [localMessages, setLocalMessages] = useState([])
+  const [pendingSuggestion, setPendingSuggestion] = useState(null)
   const [sending, setSending] = useState(false)
 
   const { data, loading, error, reload } = useAsyncData(
@@ -36,8 +39,6 @@ function LearningPage() {
   )
 
   const currentNode = data?.learning.current_node
-  const latestSignal = localMessages.findLast?.((item) => item.signal)?.signal || data?.dialogues.at(-1)?.extracted_signal || {}
-
   const sendMessage = async () => {
     const value = chatInput.trim()
     if (!value || !currentNode) return message.warning('请输入问题')
@@ -47,6 +48,10 @@ function LearningPage() {
     try {
       const response = await dialogueApi.chat(studentId, currentNode.node_id, value)
       setLocalMessages((items) => [...items, { role: 'assistant', content: response.reply, signal: response.signal }])
+      if (response.adjustment_suggestion) {
+        setPendingSuggestion(response.adjustment_suggestion)
+        message.info('AI 已生成路径调整建议，请确认后再切换')
+      }
       if (response.path_adjusted) {
         await refresh()
         await reload()
@@ -57,6 +62,31 @@ function LearningPage() {
       message.error(requestError.message)
     } finally {
       setSending(false)
+    }
+  }
+
+  const acceptSuggestion = async () => {
+    if (!pendingSuggestion) return
+    try {
+      await pathApi.confirmAdjustment(studentId, pendingSuggestion.suggestion_id)
+      setPendingSuggestion(null)
+      setLocalMessages([])
+      await refresh()
+      await reload()
+      message.success('已按建议切换学习路径')
+    } catch (requestError) {
+      message.error(requestError.message)
+    }
+  }
+
+  const rejectSuggestion = async () => {
+    if (!pendingSuggestion) return
+    try {
+      await pathApi.rejectAdjustment(studentId, pendingSuggestion.suggestion_id)
+      setPendingSuggestion(null)
+      message.info('已保留当前学习路径')
+    } catch (requestError) {
+      message.error(requestError.message)
     }
   }
 
@@ -126,12 +156,22 @@ result = trace_call(3)`}</code></pre>
         <aside className="learning-aside">
           <Card className="soft-card chat-card" title={<Space><RobotOutlined /> AI 学习助手 <Tag color={health?.ai === 'available' ? 'blue' : 'default'}>{health?.ai || 'unknown'}</Tag></Space>}>
             <div className="chat-stream">
-              {data.dialogues.length === 0 ? <div className="chat-message chat-message--assistant"><Avatar icon={<RobotOutlined />} /><div>当前没有历史对话。</div></div> : null}
+              {data.dialogues.length === 0 ? <div className="chat-message chat-message--assistant"><Avatar icon={<RobotOutlined />} /><div>请输入你的问题，我会根据当前学习内容给出反馈。</div></div> : null}
               {data.dialogues.flatMap((dialogue) => [{ role: 'user', content: dialogue.user_message, key: `u-${dialogue.dialogue_id}` }, { role: 'assistant', content: dialogue.ai_response, key: `a-${dialogue.dialogue_id}` }]).concat(localMessages.map((item, index) => ({ ...item, key: `local-${index}` }))).map((item) => <div className={`chat-message chat-message--${item.role}`} key={item.key}>{item.role === 'assistant' ? <Avatar icon={<RobotOutlined />} /> : null}<div>{item.content}</div></div>)}
             </div>
-            <Collapse ghost size="small" items={[{ key: 'signal', label: '查看最近学习状态信号', children: <pre className="signal-code">{JSON.stringify(latestSignal, null, 2)}</pre> }]} />
             <div className="chat-composer"><Input value={chatInput} onChange={(event) => setChatInput(event.target.value)} onPressEnter={sendMessage} placeholder="输入你的问题…" /><Button loading={sending} type="primary" icon={<SendOutlined />} onClick={sendMessage} /></div>
           </Card>
+          {pendingSuggestion ? (
+            <Card className="soft-card adjustment-card" title="路径调整建议">
+              <div className="adjustment-card__summary">
+                <span>建议切换到</span>
+                <strong>{pendingSuggestion.suggested_path_name}</strong>
+                <Tag color={pendingSuggestion.risk_level === 'high' ? 'red' : pendingSuggestion.risk_level === 'medium' ? 'orange' : 'green'}>风险 · {pendingSuggestion.risk_level}</Tag>
+              </div>
+              <p>{pendingSuggestion.reason}</p>
+              <Space wrap><Button type="primary" onClick={acceptSuggestion}>接受切换</Button><Button onClick={rejectSuggestion}>暂不切换</Button><Button onClick={() => navigate('/paths')}>查看其他路径</Button></Space>
+            </Card>
+          ) : null}
           <Card className="soft-card path-mini-card" title="当前路径">{currentPath.nodes.map((node, index) => <div className={`path-mini-node ${node.status === 'learning' ? 'path-mini-node--active' : ''}`} key={node.node_id}><span>{node.status === 'completed' ? <CheckCircleOutlined /> : node.status === 'learning' ? <ThunderboltOutlined /> : index + 1}</span><b>{node.name}</b></div>)}</Card>
         </aside>
       </div>

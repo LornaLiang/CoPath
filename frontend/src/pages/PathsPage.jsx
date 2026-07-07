@@ -6,7 +6,7 @@ import {
   RobotOutlined,
   ThunderboltOutlined,
 } from '@ant-design/icons'
-import { Button, Card, Col, Empty, Progress, Radio, Row, Space, Steps, Table, Tag, message } from 'antd'
+import { Button, Card, Col, Empty, Modal, Progress, Radio, Row, Space, Steps, Table, Tag, message } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
@@ -27,10 +27,12 @@ function PathsPage() {
   const goalId = currentStudent?.current_goal_id
   const [selectedPath, setSelectedPath] = useState(null)
   const [switching, setSwitching] = useState(false)
+  const [pendingSuggestion, setPendingSuggestion] = useState(null)
+  const [switchEvaluation, setSwitchEvaluation] = useState(null)
 
   const { data, loading, error, reload } = useAsyncData(
     () => studentId && goalId
-      ? Promise.all([pathApi.listCandidates(studentId, goalId), pathApi.listSwitchLogs(studentId), profileApi.getMastery(studentId), pathApi.getPlan(studentId)]).then(([candidates, logs, mastery, plan]) => ({ candidates, logs, mastery, plan }))
+      ? Promise.all([pathApi.listCandidates(studentId, goalId), pathApi.listSwitchLogs(studentId), profileApi.getMastery(studentId), pathApi.getPlan(studentId), pathApi.getPendingAdjustment(studentId)]).then(([candidates, logs, mastery, plan, pending]) => ({ candidates, logs, mastery, plan, pending }))
       : Promise.resolve(null),
     [studentId, goalId],
   )
@@ -38,6 +40,7 @@ function PathsPage() {
   useEffect(() => {
     const active = data?.candidates.find((path) => path.is_current)
     if (active) setSelectedPath(active.path_id)
+    setPendingSuggestion(data?.pending || null)
   }, [data])
 
   const selected = data?.candidates.find((path) => path.path_id === selectedPath)
@@ -58,10 +61,62 @@ function PathsPage() {
     if (!selected || selected.is_current) return
     setSwitching(true)
     try {
+      const evaluation = await pathApi.evaluateSwitch(studentId, selected.path_id)
+      if (!evaluation.recommended) {
+        setSwitchEvaluation({ evaluation, path: selected })
+        return
+      }
       await pathApi.switch(studentId, selected.path_id, '学生在学习路径页面手动切换。')
       await refresh()
       await reload()
       message.success(`已切换至“${selected.path_name}”`)
+    } catch (requestError) {
+      message.error(requestError.message)
+    } finally {
+      setSwitching(false)
+    }
+  }
+
+  const overrideSwitch = async () => {
+    if (!switchEvaluation) return
+    setSwitching(true)
+    try {
+      await pathApi.evaluateSwitch(studentId, switchEvaluation.path.path_id, true)
+      await refresh()
+      await reload()
+      message.warning(`已覆盖系统建议并切换至“${switchEvaluation.path.path_name}”`)
+      setSwitchEvaluation(null)
+    } catch (requestError) {
+      message.error(requestError.message)
+    } finally {
+      setSwitching(false)
+    }
+  }
+
+  const acceptSuggestion = async () => {
+    if (!pendingSuggestion) return
+    setSwitching(true)
+    try {
+      await pathApi.confirmAdjustment(studentId, pendingSuggestion.suggestion_id)
+      await refresh()
+      await reload()
+      setPendingSuggestion(null)
+      message.success('已按建议切换路径')
+    } catch (requestError) {
+      message.error(requestError.message)
+    } finally {
+      setSwitching(false)
+    }
+  }
+
+  const rejectSuggestion = async () => {
+    if (!pendingSuggestion) return
+    setSwitching(true)
+    try {
+      await pathApi.rejectAdjustment(studentId, pendingSuggestion.suggestion_id)
+      await reload()
+      setPendingSuggestion(null)
+      message.info('已暂不切换，继续当前路径')
     } catch (requestError) {
       message.error(requestError.message)
     } finally {
@@ -90,6 +145,14 @@ function PathsPage() {
         <div><span>当前目标</span><strong>{goal?.title || goalId}</strong></div><div><span>推荐路径</span><strong>{pathTypeLabels[data.plan.selected_path]}</strong></div><div><span>当前节点</span><strong>{currentPath.nodes[currentIndex]?.name}</strong></div><div><span>路径状态</span><Tag color="success">{currentPath.status}</Tag></div><div className="path-overview-strip__progress"><span>整体进度</span><Progress percent={total ? Math.round(completed / total * 100) : 0} size="small" /></div>
       </div>
 
+      {pendingSuggestion ? (
+        <Card className="soft-card adjustment-card path-adjustment-card" title={<Space><RobotOutlined /> 待确认路径调整建议</Space>}>
+          <div className="adjustment-card__summary"><span>建议切换到</span><strong>{pendingSuggestion.suggested_path_name}</strong><Tag color={pendingSuggestion.risk_level === 'high' ? 'red' : pendingSuggestion.risk_level === 'medium' ? 'orange' : 'green'}>风险 · {pendingSuggestion.risk_level}</Tag></div>
+          <p>{pendingSuggestion.reason}</p>
+          <Space wrap><Button type="primary" loading={switching} onClick={acceptSuggestion}>接受切换</Button><Button loading={switching} onClick={rejectSuggestion}>暂不切换</Button><Button onClick={() => setSelectedPath(data.candidates.find((path) => path.path_type === pendingSuggestion.suggested_path_type)?.path_id || selectedPath)}>查看其他路径</Button></Space>
+        </Card>
+      ) : null}
+
       <Row gutter={16}>
         <Col span={8}>
           <Card className="soft-card path-picker" title="候选路径">
@@ -115,6 +178,24 @@ function PathsPage() {
       </Row>
 
       <Card className="soft-card path-log-card" title="路径切换记录"><Table rowKey="switch_id" columns={switchColumns} dataSource={data.logs} pagination={false} size="small" locale={{ emptyText: '暂无路径切换记录' }} /></Card>
+      <Modal
+        title="系统不建议直接切换"
+        open={Boolean(switchEvaluation)}
+        onCancel={() => setSwitchEvaluation(null)}
+        footer={switchEvaluation ? [
+          <Button key="override" danger loading={switching} onClick={overrideSwitch}>仍然切换</Button>,
+          <Button key="suggested" type="primary" onClick={() => setSwitchEvaluation(null)}>先按建议学习</Button>,
+          <Button key="cancel" onClick={() => setSwitchEvaluation(null)}>取消</Button>,
+        ] : null}
+      >
+        {switchEvaluation ? (
+          <div className="switch-risk-modal">
+            <p><strong>风险等级：</strong>{switchEvaluation.evaluation.risk_level}</p>
+            <p><strong>不建议原因：</strong>{switchEvaluation.evaluation.not_recommended_reason}</p>
+            <p><strong>推荐替代动作：</strong>{switchEvaluation.evaluation.alternative_action}</p>
+          </div>
+        ) : null}
+      </Modal>
     </div>
   )
 }

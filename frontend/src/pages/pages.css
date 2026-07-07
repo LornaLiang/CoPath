@@ -204,6 +204,14 @@
 .path-facts p:last-child { border: 0; }
 .path-facts p strong { margin-left: auto; color: var(--ink); }
 .path-log-card { margin-top: 16px; }
+.adjustment-card .ant-card-body { padding-top: 12px; }
+.adjustment-card__summary { display: flex; align-items: center; gap: 8px; }
+.adjustment-card__summary span { color: var(--muted); font-size: 9px; }
+.adjustment-card__summary strong { font-size: 13px; }
+.adjustment-card p { color: #526078; font-size: 10px; line-height: 1.7; }
+.path-adjustment-card { margin-bottom: 16px; }
+.switch-risk-modal p { margin: 8px 0; color: #526078; font-size: 12px; }
+.switch-risk-modal strong { color: var(--ink); }
 
 /* Learning */
 .learning-node-strip { padding: 14px 17px; }
@@ -339,6 +347,8 @@
 .student-switch-preview span { display: block; }
 .student-switch-preview strong { font-size: 14px; }
 .student-switch-preview span { color: var(--muted); font-size: 9px; }
+.student-switch-preview .student-avatar { flex: none; }
+.student-select-option { display: inline-flex; align-items: center; gap: 7px; }
 .setting-field { margin: 14px 0; }
 .setting-field label,
 .theme-colors label { display: block; margin-bottom: 6px; color: #3e4c64; font-size: 10px; font-weight: 650; }

@@ -100,44 +100,19 @@ VALUES
     (9, 'S003', 'function', 'finish', 'completed', 0.80, 480, '2026-07-05 17:40:00'),
     (10, 'S003', 'parameter', 'learn', NULL, 0.60, 540, '2026-07-05 18:25:00');
 
-INSERT INTO dialogue_logs
-    (dialogue_id, student_id, node_id, user_message, ai_response, extracted_signal_json, created_at)
-VALUES
-    (
-        1, 'S001', 'call_stack',
-        '为什么函数结束以后还能继续执行？',
-        '因为调用栈保存了函数返回的位置。',
-        '{"knowledge_gap":"call_stack","confusion_level":0.82,"learning_preference":"example","suggested_action":"insert_prerequisite"}',
-        '2026-07-05 19:00:00'
-    ),
-    (
-        2, 'S003', 'recursion',
-        '能不能举一个例子？',
-        '下面我们通过汉诺塔理解递归。',
-        '{"knowledge_gap":"recursion","confusion_level":0.65,"learning_preference":"example","suggested_action":"keep_example_path"}',
-        '2026-07-05 19:10:00'
-    ),
-    (
-        3, 'S002', 'recursion',
-        '这一部分我已经会了。',
-        '可以直接进入 DFS。',
-        '{"knowledge_gap":null,"confusion_level":0.1,"mastery":"high","learning_preference":"fast","suggested_action":"skip_node"}',
-        '2026-07-05 19:20:00'
-    );
-
 INSERT INTO path_switch_logs
     (switch_id, student_id, old_path_id, new_path_id, trigger_type, trigger_signal_json, reason, created_at)
 VALUES
     (
-        1, 'S001', 'P001', 'P001', 'dialogue',
+        1, 'S001', 'P002', 'P001', 'dialogue',
         '{"knowledge_gap":"call_stack","confusion_level":0.82,"action":"insert_return_value_review"}',
-        '检测到调用栈理解困难，在基础补全路径中插入返回值复习后继续学习调用栈。',
+        '检测到调用栈理解困难，由案例驱动路径切换为基础补全路径。',
         '2026-07-05 20:00:00'
     ),
     (
-        2, 'S002', 'P006', 'P006', 'quiz',
+        2, 'S002', 'P004', 'P006', 'quiz',
         '{"mastery":"high","action":"skip_recursion_review"}',
-        'Alice 掌握度较高，跳过递归思想复习并直接进入 DFS。',
+        'Alice 掌握度较高，由基础补全路径切换为快速提升路径。',
         '2026-07-05 20:05:00'
     );
 

@@ -11,8 +11,8 @@ from backend.models import (
     StudentProfile,
 )
 from backend.services.common import require_node, require_student, serialize_resource
+from backend.services.path_collaboration_service import PathCollaborationService
 from backend.services.path_service import PathService
-from backend.services.path_planner import PathPlanner
 from backend.services.profile_service import LearningProfileService
 from backend.utils.errors import AppError, NotFoundError
 from backend.utils.json import parse_json
@@ -71,7 +71,7 @@ class LearningService:
             time_spent=time_spent,
         )
         profile = None
-        path_plan = None
+        suggestion = None
         try:
             session.add(event)
             session.flush()
@@ -83,11 +83,17 @@ class LearningService:
                 commit=False,
             )
             if student.current_goal_id:
-                path_plan = PathPlanner.update_path(
+                suggestion = PathCollaborationService.suggest_adjustment(
                     session,
                     student_id,
                     student.current_goal_id,
                     trigger_type="quiz",
+                    trigger_signal={
+                        "event_type": event_type,
+                        "node_id": node_id,
+                        "result": result,
+                        "score": score,
+                    },
                     commit=False,
                 )
             session.commit()
@@ -103,27 +109,24 @@ class LearningService:
             event_type,
             result,
             profile is not None,
-            bool(path_plan and path_plan["changed"]),
+            suggestion is not None,
         )
-        if path_plan and path_plan["changed"]:
+        if suggestion:
             logger.info(
-                "Path changed from learning event student_id=%s selected_path=%s "
-                "adjustments=%s reason=%s",
+                "Path adjustment suggestion created from learning event "
+                "student_id=%s suggestion_id=%s suggested_path=%s reason=%s",
                 student_id,
-                path_plan["selected_path"],
-                len(path_plan["adjustments"]),
-                path_plan["reason"],
+                suggestion["suggestion_id"],
+                suggestion["suggested_path_type"],
+                suggestion["reason"],
             )
         return {
             "event_saved": True,
             "profile_updated": profile is not None,
             "profile": profile,
-            "path_adjusted": bool(path_plan and path_plan["changed"]),
-            "new_path": (
-                path_plan["current_path"]
-                if path_plan and path_plan["changed"]
-                else None
-            ),
+            "path_adjusted": False,
+            "new_path": None,
+            "adjustment_suggestion": suggestion,
         }
 
     @staticmethod

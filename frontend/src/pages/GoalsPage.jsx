@@ -5,7 +5,6 @@ import {
   RobotOutlined,
   SearchOutlined,
   ThunderboltOutlined,
-  UserOutlined,
 } from '@ant-design/icons'
 import { Button, Card, Empty, Input, Select, Space, Tag, message } from 'antd'
 import { useEffect, useMemo, useState } from 'react'
@@ -13,6 +12,7 @@ import { useNavigate } from 'react-router-dom'
 
 import PageHeader from '../components/PageHeader'
 import PageState from '../components/PageState'
+import StudentAvatar from '../components/StudentAvatar'
 import useAsyncData from '../hooks/useAsyncData'
 import { useAppData } from '../hooks/useAppData'
 import { goalApi, learningApi, profileApi } from '../services/copathApi'
@@ -73,7 +73,7 @@ function GoalsPage() {
 
       <div className="goals-overview-grid">
         <Card className="soft-card student-summary-card" bordered>
-          <div className="student-summary-card__avatar"><UserOutlined /></div>
+          <StudentAvatar student={currentStudent} size={45} />
           <div className="student-summary-card__main"><span>当前学习者</span><strong>{currentStudent.name}</strong><small>{data.profile.recent_state}</small></div>
           <div className="student-summary-card__tags"><Tag>速度 · {speedLabels[data.profile.learning_speed]}</Tag><Tag color="geekblue">偏好 · {preferenceLabels[data.profile.learning_preference]}</Tag></div>
         </Card>

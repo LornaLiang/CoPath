@@ -47,7 +47,11 @@ AI 提取学习状态信号
   ↓
 判断是否需要路径调整
   ↓
-如需要，生成新路径并记录切换原因
+如需要，生成待确认路径调整建议
+  ↓
+用户确认 / 拒绝 / 覆盖
+  ↓
+确认后才执行真实路径切换并记录切换原因
   ↓
 前端展示最新路径、画像和学习记录
 ```
@@ -191,16 +195,17 @@ ChatService
   ↓
 调用 ProfileService 更新学生画像
   ↓
-调用 AdaptationService 判断是否需要调整路径
+调用 PathCollaborationService 判断是否需要调整路径
   ↓
-返回 AI 回复、学习状态信号、是否调整路径
+返回 AI 回复、学习状态信号、待确认路径建议
 ```
 
 ### 写入表
 
 - dialogue_logs
 - student_profiles
-- path_switch_logs（仅当触发路径调整）
+- path_adjustment_suggestions（仅当触发路径调整建议）
+- path_switch_logs（仅当用户确认后真正执行切换）
 
 ### AI 输出结构
 
@@ -236,16 +241,16 @@ LearningService
   ↓
 ProfileService 更新掌握度、速度、信心
   ↓
-AdaptationService 判断是否调整路径
+PathCollaborationService 判断是否需要生成路径调整建议
   ↓
-返回最新画像、路径状态
+返回最新画像、路径状态和待确认建议
 ```
 
 ### 写入表
 
 - learning_events
 - student_profiles
-- path_switch_logs（如果触发路径调整）
+- path_adjustment_suggestions（如果触发路径调整建议）
 
 ------
 
@@ -311,7 +316,7 @@ ProfileService
 ### 数据流
 
 ```text
-AdaptationService
+PathCollaborationService
   ↓
 读取 student_profiles
   ↓
@@ -321,15 +326,15 @@ AdaptationService
   ↓
 判断是否需要切换路径 / 插入补救节点 / 跳过节点
   ↓
-生成新路径
+生成 pending 路径调整建议
   ↓
-将旧路径 is_current 设为 0
+前端展示建议卡片和风险等级
   ↓
-写入新路径并设为 current
+用户接受 / 拒绝 / 查看其他路径
   ↓
-写入 path_switch_logs
+用户接受后调用 PathPlanner 执行调整
   ↓
-返回调整原因
+真实切换时写入 path_switch_logs
 ```
 
 ### 路径调整类型
@@ -338,6 +343,13 @@ AdaptationService
 - insert_node：插入补救知识点
 - skip_node：跳过已掌握节点
 - reorder_nodes：调整节点顺序
+
+### 协同状态
+
+- pending：系统只生成建议，等待用户确认。
+- applied：用户接受建议后已执行路径调整。
+- rejected：用户选择暂不切换。
+- overridden：系统不建议切换，但用户仍然手动切换。
 
 ------
 
@@ -435,11 +447,12 @@ DatabaseService
 ## 13. 数据一致性原则
 
 1. 当前学生只允许有一条 `is_current = 1` 的学习路径。
-2. 路径调整必须写入 `path_switch_logs`。
+2. 只有真正执行过的路径切换才写入 `path_switch_logs`。
 3. AI 对话必须写入 `dialogue_logs`。
 4. 学习行为必须写入 `learning_events`。
 5. 学生画像更新必须写入 `student_profiles`。
 6. 前端不能直接修改路径状态。
+7. AI 和系统不能绕过用户确认直接切换学习路径。
 7. 所有状态变化必须经过后端 Service 层。
 
 ------
@@ -450,10 +463,10 @@ Codex 实现时必须遵循：
 
 1. API 层只接收请求和返回结果。
 2. Service 层处理业务逻辑。
-3. Planner 层处理路径生成与调整。
+3. Planner 层处理路径生成与最终执行调整。
 4. AI 层只负责调用模型和解析输出。
+5. 协同路径调整由 PathCollaborationService 生成建议并记录用户决策。
 5. Database 层只负责数据库连接和持久化。
 6. 前端通过 Axios 调用 API，不直接写业务逻辑。
-
 
 

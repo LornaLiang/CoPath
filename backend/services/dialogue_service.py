@@ -9,8 +9,8 @@ from backend.ai import get_ai_service
 from backend.ai.config import AIConfigurationError
 from backend.models import DialogueLog, SystemSetting
 from backend.services.common import require_node, require_student
+from backend.services.path_collaboration_service import PathCollaborationService
 from backend.services.path_service import PathService
-from backend.services.path_planner import PathPlanner
 from backend.services.profile_service import LearningProfileService, ProfileService
 from backend.utils.errors import AppError
 from backend.utils.json import parse_json
@@ -77,7 +77,7 @@ class DialogueService:
             message=message,
         )
         signal = result.signal.model_dump(mode="json")
-        path_plan = None
+        suggestion = None
         try:
             dialogue = DialogueLog(
                 student_id=student_id,
@@ -94,11 +94,12 @@ class DialogueService:
                 commit=False,
             )
             if student.current_goal_id:
-                path_plan = PathPlanner.update_path(
+                suggestion = PathCollaborationService.suggest_adjustment(
                     session,
                     student_id,
                     student.current_goal_id,
                     trigger_type="dialogue",
+                    trigger_signal=signal,
                     commit=False,
                 )
             session.commit()
@@ -108,31 +109,31 @@ class DialogueService:
 
         logger.info(
             "AI output persisted student_id=%s node_id=%s knowledge_gap=%s "
-            "confusion_level=%s profile_updated=true path_adjusted=%s",
+            "confusion_level=%s profile_updated=true suggestion_created=%s",
             student_id,
             node_id,
             signal.get("knowledge_gap"),
             signal.get("confusion_level"),
-            bool(path_plan and path_plan["changed"]),
+            suggestion is not None,
         )
-        if path_plan and path_plan["changed"]:
+        if suggestion:
             logger.info(
-                "Path changed from AI signal student_id=%s selected_path=%s "
-                "adjustments=%s reason=%s",
+                "Path adjustment suggestion created from AI signal student_id=%s "
+                "suggestion_id=%s suggested_path=%s risk=%s reason=%s",
                 student_id,
-                path_plan["selected_path"],
-                len(path_plan["adjustments"]),
-                path_plan["reason"],
+                suggestion["suggestion_id"],
+                suggestion["suggested_path_type"],
+                suggestion["risk_level"],
+                suggestion["reason"],
             )
 
         return {
             "reply": result.reply,
             "signal": signal,
             "profile_updated": True,
-            "path_adjusted": bool(path_plan and path_plan["changed"]),
-            "adjustment": (
-                path_plan if path_plan and path_plan["changed"] else None
-            ),
+            "path_adjusted": False,
+            "adjustment": None,
+            "adjustment_suggestion": suggestion,
         }
 
     @staticmethod

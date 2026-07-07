@@ -5,15 +5,15 @@ import {
   CompassOutlined,
   RiseOutlined,
   ThunderboltOutlined,
-  UserOutlined,
 } from '@ant-design/icons'
-import { Avatar, Card, Col, Empty, Progress, Row, Space, Tag } from 'antd'
+import { Card, Col, Empty, Progress, Row, Space, Tag } from 'antd'
 import { useMemo } from 'react'
 
 import EChart from '../components/EChart'
 import MetricCard from '../components/MetricCard'
 import PageHeader from '../components/PageHeader'
 import PageState from '../components/PageState'
+import StudentAvatar from '../components/StudentAvatar'
 import useAsyncData from '../hooks/useAsyncData'
 import { useAppData } from '../hooks/useAppData'
 import { learningApi, profileApi } from '../services/copathApi'
@@ -61,7 +61,7 @@ function ProfilePage() {
   return (
     <div className="page profile-page">
       <PageHeader title="学习画像" description="画像、掌握度和事件趋势均读取自当前学生数据库记录。" extra={<Tag color="green">学生 ID · {studentId}</Tag>} />
-      <Card className="soft-card profile-hero"><div className="profile-hero__identity"><Avatar size={70} icon={<UserOutlined />} /><div><span>当前学习者</span><h2>{currentStudent.name}</h2><p>Python 程序设计</p></div></div><div className="profile-hero__summary"><span>当前目标</span><strong>{data.profile.current_goal}</strong><small><AimOutlined /> {currentStudent.current_goal_id}</small></div><div className="profile-hero__summary"><span>当前路径</span><strong>{data.profile.current_path}</strong><small><CompassOutlined /> 已完成 {completed}/{currentPath.nodes.length}</small></div><div className="profile-hero__confidence"><Progress type="dashboard" percent={confidence} size={82} strokeColor="#2563eb" /><span>学习信心</span></div></Card>
+      <Card className="soft-card profile-hero"><div className="profile-hero__identity"><StudentAvatar student={currentStudent} size={70} /><div><span>当前学习者</span><h2>{currentStudent.name}</h2><p>Python 程序设计</p></div></div><div className="profile-hero__summary"><span>当前目标</span><strong>{data.profile.current_goal}</strong><small><AimOutlined /> {currentStudent.current_goal_id}</small></div><div className="profile-hero__summary"><span>当前路径</span><strong>{data.profile.current_path}</strong><small><CompassOutlined /> 已完成 {completed}/{currentPath.nodes.length}</small></div><div className="profile-hero__confidence"><Progress type="dashboard" percent={confidence} size={82} strokeColor="#2563eb" /><span>学习信心</span></div></Card>
       <div className="metrics-grid profile-metrics"><MetricCard icon={<ClockCircleOutlined />} label="学习速度" value={speedLabels[data.profile.learning_speed]} hint={data.profile.learning_speed} /><MetricCard icon={<CompassOutlined />} label="学习偏好" value={preferenceLabels[data.profile.learning_preference]} hint={data.profile.learning_preference} tone="green" /><MetricCard icon={<RiseOutlined />} label="最近状态" value={stateLabels[data.profile.recent_state] || data.profile.recent_state} hint={`${data.events.length} 条学习事件`} tone="orange" /><MetricCard icon={<ThunderboltOutlined />} label="平均掌握度" value={`${averageMastery}%`} hint={`${data.mastery.length} 个画像知识点`} tone="purple" /></div>
       <Row gutter={16}>
         <Col span={8}><Card className="soft-card" title="能力雷达"><EChart option={radarOption} height={280} /></Card></Col>

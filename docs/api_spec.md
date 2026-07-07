@@ -251,6 +251,9 @@ CoPath 后端使用 FastAPI 提供 RESTful API。
 
 ### POST `/api/paths/switch`
 
+该接口只执行真实切换。前端手动选择路径时应先调用
+`POST /api/path/evaluate-switch`，根据评估结果由用户确认后再执行切换或覆盖。
+
 请求：
 
 ```json
@@ -296,6 +299,124 @@ CoPath 后端使用 FastAPI 提供 RESTful API。
     "created_at": "2026-07-05 20:00:00"
   }
 ]
+```
+
+------
+
+## 6.5 生成路径调整建议
+
+### POST `/api/path/suggest-adjustment`
+
+只生成待确认建议，不切换当前路径，不写入 `path_switch_logs`。
+
+请求：
+
+```json
+{
+  "student_id": "S001",
+  "goal_id": "G001",
+  "trigger_type": "dialogue",
+  "trigger_signal": {
+    "knowledge_gap": "call_stack",
+    "confusion_level": 0.82
+  }
+}
+```
+
+返回：
+
+```json
+{
+  "suggestion_id": 1,
+  "student_id": "S001",
+  "current_path_id": "P003",
+  "suggested_path_type": "basic",
+  "suggested_path_name": "基础补全路径",
+  "reason": "call_stack mastery 较低，建议切换到基础补全路径。",
+  "risk_level": "medium",
+  "status": "pending"
+}
+```
+
+------
+
+## 6.6 确认路径调整建议
+
+### POST `/api/path/confirm-adjustment`
+
+用户点击“接受切换”后调用。该接口才会执行 PathPlanner 调整，并在真实切换时写入
+`path_switch_logs`。
+
+请求：
+
+```json
+{
+  "student_id": "S001",
+  "suggestion_id": 1
+}
+```
+
+返回：
+
+```json
+{
+  "suggestion": {
+    "suggestion_id": 1,
+    "status": "applied"
+  },
+  "path_adjusted": true,
+  "adjustment": {}
+}
+```
+
+------
+
+## 6.7 拒绝路径调整建议
+
+### POST `/api/path/reject-adjustment`
+
+用户点击“暂不切换”后调用。该接口只记录 `rejected` 状态，不修改当前路径。
+
+请求：
+
+```json
+{
+  "student_id": "S001",
+  "suggestion_id": 1
+}
+```
+
+------
+
+## 6.8 手动切换前评估
+
+### POST `/api/path/evaluate-switch`
+
+用户手动选择其他路径时先调用该接口。`force=false` 时只评估不切换；
+`force=true` 表示用户在风险提示后仍然切换，系统记录 `overridden` 状态。
+
+请求：
+
+```json
+{
+  "student_id": "S001",
+  "new_path_id": "P003",
+  "force": false
+}
+```
+
+返回：
+
+```json
+{
+  "recommended": false,
+  "recommended_path_type": "basic",
+  "risk_level": "high",
+  "not_recommended_reason": "当前画像更匹配基础补全路径",
+  "alternative_action": "先按基础补全路径学习",
+  "requires_confirmation": true,
+  "switched": false
+}
 ```
 
 ------
@@ -349,8 +470,12 @@ CoPath 后端使用 FastAPI 提供 RESTful API。
 {
   "event_saved": true,
   "profile_updated": true,
-  "path_adjusted": true,
-  "new_path": {}
+  "path_adjusted": false,
+  "new_path": null,
+  "adjustment_suggestion": {
+    "status": "pending",
+    "suggested_path_type": "basic"
+  }
 }
 ```
 
@@ -477,7 +602,8 @@ CoPath 后端使用 FastAPI 提供 RESTful API。
 5. 提取结构化学习状态。
 6. 写入 `dialogue_logs`。
 7. 更新学习画像。
-8. 判断是否触发路径调整。
+8. 判断是否需要生成路径调整建议。
+9. 如需调整，写入 `path_adjustment_suggestions`，状态为 `pending`。
 
 返回：
 
@@ -491,11 +617,15 @@ CoPath 后端使用 FastAPI 提供 RESTful API。
     "suggested_action": "insert_prerequisite"
   },
   "profile_updated": true,
-  "path_adjusted": true,
-  "adjustment": {
-    "type": "insert_node",
-    "reason": "检测到学生对调用栈理解不足，插入函数返回值补救节点。",
-    "new_path": {}
+  "path_adjusted": false,
+  "adjustment": null,
+  "adjustment_suggestion": {
+    "suggestion_id": 1,
+    "suggested_path_type": "basic",
+    "suggested_path_name": "基础补全路径",
+    "reason": "检测到学生对调用栈理解不足，建议切换到基础补全路径。",
+    "risk_level": "medium",
+    "status": "pending"
   }
 }
 ```
@@ -676,4 +806,3 @@ CoPath 后端使用 FastAPI 提供 RESTful API。
 8. Demo 阶段可以不做登录认证。
 9. 当前学生可以通过 `student_id` 参数传递。
 10. 后续扩展时再加入 JWT 登录认证。
-

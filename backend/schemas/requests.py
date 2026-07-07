@@ -70,3 +70,19 @@ class ProfileEventRequest(RequestModel):
 class PathPlanRequest(RequestModel):
     student_id: str = Field(min_length=1, max_length=64)
     goal_id: str = Field(min_length=1, max_length=64)
+
+
+class PathSuggestionRequest(PathPlanRequest):
+    trigger_type: Literal["dialogue", "quiz", "time", "manual"] = "manual"
+    trigger_signal: dict | None = None
+
+
+class PathSuggestionDecisionRequest(RequestModel):
+    student_id: str = Field(min_length=1, max_length=64)
+    suggestion_id: int = Field(ge=1)
+
+
+class PathEvaluateSwitchRequest(RequestModel):
+    student_id: str = Field(min_length=1, max_length=64)
+    new_path_id: str = Field(min_length=1, max_length=64)
+    force: bool = False

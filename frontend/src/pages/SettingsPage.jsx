@@ -11,11 +11,12 @@ import {
   SunOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import { Alert, Avatar, Button, Card, Col, Modal, Radio, Row, Select, Space, Switch, Tag, message } from 'antd'
+import { Alert, Button, Card, Col, Modal, Radio, Row, Select, Space, Switch, Tag, message } from 'antd'
 import { useEffect, useState } from 'react'
 
 import PageHeader from '../components/PageHeader'
 import PageState from '../components/PageState'
+import StudentAvatar from '../components/StudentAvatar'
 import useAsyncData from '../hooks/useAsyncData'
 import { useAppData } from '../hooks/useAppData'
 import { graphApi, settingsApi } from '../services/copathApi'
@@ -87,7 +88,7 @@ function SettingsPage() {
     <div className="page settings-page">
       <PageHeader title="设置" description="管理当前 Demo 学生并检查真实后端和数据库状态。" extra={<Tag color={apiHealthy ? 'green' : 'red'} icon={<CheckCircleFilled />}>API {data.health.status} · DB {data.health.database}</Tag>} />
       <Row gutter={16}>
-        <Col span={12}><Card className="soft-card settings-card" title={<Space><UserOutlined /> 当前演示学生</Space>}><div className="student-switch-preview"><Avatar size={54} icon={<UserOutlined />} /><div><strong>{currentStudent.name}</strong><span>{currentStudent.student_id} · Python 程序设计</span></div><Tag color="blue">当前</Tag></div><div className="setting-field"><label>切换 Demo 学生</label><Select loading={switching} value={studentId} onChange={changeStudent} options={students.map((student) => ({ value: student.student_id, label: `${student.name} · ${student.learning_preference}` }))} /><small>切换成功后，所有页面会重新读取该学生的数据。</small></div><div className="student-traits"><div><span>学习速度</span><strong>{currentStudentDetail.learning_speed}</strong></div><div><span>学习偏好</span><strong>{currentStudentDetail.learning_preference}</strong></div></div></Card></Col>
+        <Col span={12}><Card className="soft-card settings-card" title={<Space><UserOutlined /> 当前演示学生</Space>}><div className="student-switch-preview"><StudentAvatar student={currentStudent} size={54} /><div><strong>{currentStudent.name}</strong><span>{currentStudent.student_id} · Python 程序设计</span></div><Tag color="blue">当前</Tag></div><div className="setting-field"><label>切换 Demo 学生</label><Select loading={switching} value={studentId} onChange={changeStudent} options={students.map((student) => ({ value: student.student_id, label: <span className="student-select-option"><StudentAvatar student={student} size={24} />{student.name} · {student.learning_preference}</span> }))} /><small>切换成功后，所有页面会重新读取该学生的数据。</small></div><div className="student-traits"><div><span>学习速度</span><strong>{currentStudentDetail.learning_speed}</strong></div><div><span>学习偏好</span><strong>{currentStudentDetail.learning_preference}</strong></div></div></Card></Col>
         <Col span={12}><Card className="soft-card settings-card" title={<Space><RobotOutlined /> 模型配置</Space>}><div className="model-status-card"><span><RobotOutlined /></span><div><small>LLM Provider</small><strong>{data.settings.llm_provider}</strong></div><Tag color={data.health.ai === 'available' ? 'green' : 'default'}>{data.health.ai}</Tag></div><div className="setting-field"><label>Model Name</label><Select value={data.settings.model_name} disabled options={[{ value: data.settings.model_name, label: data.settings.model_name }]} /></div><Alert type="info" showIcon message="API Key 仅由 FastAPI 从 .env 读取，不会发送到前端或写入数据库。" /><div className="api-status-row"><span><ApiOutlined /> AI 配置状态</span><Tag color={data.health.ai === 'available' ? 'green' : 'red'}>{data.health.ai}</Tag><Button size="small" onClick={() => reload().then(() => message.success('健康状态已刷新')).catch((requestError) => message.error(requestError.message))}>重新检测</Button></div></Card></Col>
       </Row>
       <Row gutter={16} className="settings-second-row">

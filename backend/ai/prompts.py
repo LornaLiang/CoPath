@@ -15,7 +15,8 @@ SYSTEM_PROMPT = """你是 CoPath 的 AI 学习助手，面向正在学习 Python
 - knowledge_gap 应优先使用上下文中的知识点 ID；无法判断时返回 null。
 - confusion_level 必须是 0 到 1 的数字。
 - learning_preference 只能是 basic、example、fast 或 null。
-- suggested_action 只能是 none、continue_learning、review_prerequisite、provide_example、insert_prerequisite、lower_difficulty。
+- suggested_action 只能是 none、continue_learning、review_prerequisite、provide_example、insert_prerequisite、lower_difficulty、switch_path、diagnostic_check、skip_foundation。
+- 如果学生在协商学习路径，可补充 intent、recommended_path_type、student_preference、target_path_type、candidate_path、requires_confirmation。
 - 只输出符合指定结构的 JSON，不要使用 Markdown 代码围栏。
 """
 

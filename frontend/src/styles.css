@@ -200,9 +200,16 @@ body {
 }
 
 .demo-switcher .ant-segmented-item-label {
-  min-width: 40px;
+  min-width: 58px;
   padding-inline: 7px;
   font-size: 10px;
+}
+
+.demo-switcher__student {
+  height: 24px;
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
 }
 
 .header-user {

@@ -12,10 +12,11 @@ import {
   SettingOutlined,
   UserOutlined,
 } from '@ant-design/icons'
-import { Avatar, Layout, Menu, Progress, Segmented, Space, Tag, Typography, message } from 'antd'
+import { Layout, Menu, Progress, Segmented, Space, Tag, Typography, message } from 'antd'
 import { useState } from 'react'
 import { Outlet, useLocation, useNavigate } from 'react-router-dom'
 
+import StudentAvatar from '../components/StudentAvatar'
 import { useAppData } from '../hooks/useAppData'
 
 const { Header, Content, Sider } = Layout
@@ -102,7 +103,7 @@ function AppLayout() {
                   size="small"
                   disabled={switchingStudent}
                   value={currentStudent?.student_id}
-                  options={students.map((student) => ({ label: student.name, value: student.student_id }))}
+                  options={students.map((student) => ({ label: <span className="demo-switcher__student"><StudentAvatar student={student} size={22} />{student.name}</span>, value: student.student_id }))}
                   onChange={switchDemoStudent}
                 />
               </div>
@@ -110,7 +111,7 @@ function AppLayout() {
             <Tag icon={<CheckCircleFilled />} color={error ? 'error' : 'success'}>{error ? 'API 连接异常' : currentPath?.status === 'active' ? '路径进行中' : '路径待开始'}</Tag>
             <Tag color={health?.ai === 'available' ? 'blue' : 'default'}>AI · {health?.ai || '检测中'}</Tag>
             <div className="header-user">
-              <Avatar size={32} icon={<UserOutlined />} />
+              <StudentAvatar student={currentStudent} size={32} />
               <span><strong>{currentStudent?.name || '加载中'}</strong><small>当前学生</small></span>
             </div>
           </Space>

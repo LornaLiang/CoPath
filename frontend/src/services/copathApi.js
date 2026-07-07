@@ -18,6 +18,11 @@ export const pathApi = {
   generate: (studentId, goalId) => api.post('/path/generate', { student_id: studentId, goal_id: goalId }),
   updateDynamic: (studentId, goalId) => api.post('/path/update', { student_id: studentId, goal_id: goalId }),
   getPlan: (studentId) => api.get(`/path/${encodeURIComponent(studentId)}`),
+  getPendingAdjustment: (studentId) => api.get(`/path/pending-adjustment/${encodeURIComponent(studentId)}`),
+  suggestAdjustment: (studentId, goalId, triggerType = 'manual', triggerSignal = null) => api.post('/path/suggest-adjustment', { student_id: studentId, goal_id: goalId, trigger_type: triggerType, trigger_signal: triggerSignal }),
+  confirmAdjustment: (studentId, suggestionId) => api.post('/path/confirm-adjustment', { student_id: studentId, suggestion_id: suggestionId }),
+  rejectAdjustment: (studentId, suggestionId) => api.post('/path/reject-adjustment', { student_id: studentId, suggestion_id: suggestionId }),
+  evaluateSwitch: (studentId, newPathId, force = false) => api.post('/path/evaluate-switch', { student_id: studentId, new_path_id: newPathId, force }),
 }
 
 export const learningApi = {

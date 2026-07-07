@@ -1,6 +1,10 @@
 """CoPath SQLAlchemy model registry."""
 
-from backend.models.activity import DialogueLog, PathSwitchLog
+from backend.models.activity import (
+    DialogueLog,
+    PathAdjustmentSuggestion,
+    PathSwitchLog,
+)
 from backend.models.knowledge import (
     KnowledgeEdge,
     KnowledgeNode,
@@ -20,6 +24,7 @@ __all__ = [
     "LearningPath",
     "LearningResource",
     "PathSwitchLog",
+    "PathAdjustmentSuggestion",
     "Student",
     "StudentProfile",
     "SystemSetting",

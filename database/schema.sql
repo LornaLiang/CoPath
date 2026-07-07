@@ -108,6 +108,27 @@ CREATE TABLE IF NOT EXISTS path_switch_logs (
     FOREIGN KEY (new_path_id) REFERENCES learning_paths (path_id)
 );
 
+CREATE TABLE IF NOT EXISTS path_adjustment_suggestions (
+    suggestion_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    student_id TEXT NOT NULL,
+    current_path_id TEXT NOT NULL,
+    suggested_path_type TEXT NOT NULL
+        CHECK (suggested_path_type IN ('basic', 'example', 'fast')),
+    suggested_nodes_json TEXT NOT NULL,
+    trigger_type TEXT NOT NULL
+        CHECK (trigger_type IN ('dialogue', 'quiz', 'time', 'manual')),
+    trigger_signal_json TEXT NOT NULL,
+    reason TEXT NOT NULL,
+    risk_level TEXT NOT NULL
+        CHECK (risk_level IN ('low', 'medium', 'high')),
+    status TEXT NOT NULL DEFAULT 'pending'
+        CHECK (status IN ('pending', 'accepted', 'rejected', 'overridden', 'applied')),
+    created_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    confirmed_at TEXT,
+    FOREIGN KEY (student_id) REFERENCES students (student_id),
+    FOREIGN KEY (current_path_id) REFERENCES learning_paths (path_id)
+);
+
 CREATE TABLE IF NOT EXISTS learning_resources (
     resource_id TEXT PRIMARY KEY,
     node_id TEXT NOT NULL,
@@ -142,6 +163,8 @@ CREATE INDEX IF NOT EXISTS ix_dialogue_logs_student_id
     ON dialogue_logs (student_id);
 CREATE INDEX IF NOT EXISTS ix_path_switch_logs_student_id
     ON path_switch_logs (student_id);
+CREATE INDEX IF NOT EXISTS ix_path_adjustment_suggestions_student_status
+    ON path_adjustment_suggestions (student_id, status);
 CREATE INDEX IF NOT EXISTS ix_learning_resources_node_id
     ON learning_resources (node_id);
 

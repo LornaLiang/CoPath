@@ -16,7 +16,20 @@ class LearningSignal(BaseModel):
         "provide_example",
         "insert_prerequisite",
         "lower_difficulty",
+        "switch_path",
+        "diagnostic_check",
+        "skip_foundation",
     ]
+    intent: Literal[
+        "question_answering",
+        "goal_path_explanation",
+        "path_negotiation",
+    ] = "question_answering"
+    recommended_path_type: Literal["basic", "example", "fast"] | None = None
+    student_preference: Literal["basic", "example", "fast"] | None = None
+    target_path_type: Literal["basic", "example", "fast"] | None = None
+    candidate_path: Literal["basic", "example", "fast", "skip_foundation"] | None = None
+    requires_confirmation: bool = False
 
 
 class AIChatResult(BaseModel):

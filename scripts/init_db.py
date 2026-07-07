@@ -18,6 +18,7 @@ TABLE_LABELS = {
     "learning_events": "events",
     "dialogue_logs": "dialogues",
     "path_switch_logs": "path switch logs",
+    "path_adjustment_suggestions": "path adjustment suggestions",
     "learning_resources": "resources",
     "system_settings": "system settings",
 }
@@ -30,8 +31,9 @@ EXPECTED_COUNTS = {
     "learning_goals": 1,
     "learning_paths": 9,
     "learning_events": 10,
-    "dialogue_logs": 3,
+    "dialogue_logs": 0,
     "path_switch_logs": 2,
+    "path_adjustment_suggestions": 0,
     "learning_resources": 36,
     "system_settings": 6,
 }
@@ -109,6 +111,20 @@ EXPECTED_COLUMNS = {
         "reason",
         "created_at",
     ),
+    "path_adjustment_suggestions": (
+        "suggestion_id",
+        "student_id",
+        "current_path_id",
+        "suggested_path_type",
+        "suggested_nodes_json",
+        "trigger_type",
+        "trigger_signal_json",
+        "reason",
+        "risk_level",
+        "status",
+        "created_at",
+        "confirmed_at",
+    ),
     "learning_resources": (
         "resource_id",
         "node_id",
@@ -127,6 +143,8 @@ JSON_FIELDS = (
     ("learning_paths", "nodes_json"),
     ("dialogue_logs", "extracted_signal_json"),
     ("path_switch_logs", "trigger_signal_json"),
+    ("path_adjustment_suggestions", "suggested_nodes_json"),
+    ("path_adjustment_suggestions", "trigger_signal_json"),
 )
 
 
