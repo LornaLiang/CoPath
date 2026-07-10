@@ -5,7 +5,9 @@ from fastapi import APIRouter, Query
 from backend.api.dependencies import DatabaseSession
 from backend.schemas.common import ApiResponse, success_response
 from backend.schemas.requests import PathSwitchRequest
+from backend.services.path_collaboration_service import PathCollaborationService
 from backend.services.path_service import PathService
+from backend.utils.errors import ConflictError
 
 
 router = APIRouter(prefix="/paths", tags=["paths"])
@@ -28,6 +30,16 @@ def list_candidate_paths(
 
 @router.post("/switch", response_model=ApiResponse[dict[str, Any]])
 def switch_path(payload: PathSwitchRequest, session: DatabaseSession) -> dict:
+    evaluation = PathCollaborationService.evaluate_switch(
+        session,
+        payload.student_id,
+        payload.new_path_id,
+    )
+    if not evaluation["recommended"]:
+        raise ConflictError(
+            "Path switch requires confirmation through evaluate-switch "
+            "because the requested path is not recommended."
+        )
     return success_response(
         PathService.switch_path(
             session,

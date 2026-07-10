@@ -13,6 +13,7 @@ from backend.schemas.requests import (
 )
 from backend.services.path_collaboration_service import PathCollaborationService
 from backend.services.path_planner import PathPlanner
+from backend.utils.errors import ConflictError
 
 
 logger = logging.getLogger(__name__)
@@ -33,22 +34,10 @@ def generate_path(payload: PathPlanRequest, session: DatabaseSession) -> dict:
 
 @router.post("/update", response_model=CodeApiResponse[dict[str, Any]])
 def update_path(payload: PathPlanRequest, session: DatabaseSession) -> dict:
-    result = PathPlanner.update_path(
-        session,
-        payload.student_id,
-        payload.goal_id,
+    raise ConflictError(
+        "Direct path update is disabled. Use suggest-adjustment and "
+        "confirm-adjustment for human-confirmed path changes."
     )
-    logger.info(
-        "Path update evaluated student_id=%s goal_id=%s selected_path=%s "
-        "changed=%s adjustments=%s reason=%s",
-        payload.student_id,
-        payload.goal_id,
-        result["selected_path"],
-        result["changed"],
-        len(result["adjustments"]),
-        result["reason"],
-    )
-    return code_response(result)
 
 
 @router.post("/suggest-adjustment", response_model=CodeApiResponse[dict[str, Any] | None])

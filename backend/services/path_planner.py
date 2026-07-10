@@ -164,7 +164,7 @@ class PathPlanner:
         target_path.nodes_json = json.dumps(plan["nodes"], ensure_ascii=False)
         target_path.reason = plan["reason"]
 
-        if changed:
+        if path_switched:
             session.add(
                 PathSwitchLog(
                     student_id=student_id,
